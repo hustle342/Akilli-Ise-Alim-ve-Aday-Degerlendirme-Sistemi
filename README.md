@@ -13,7 +13,7 @@ Sistem; aday CV'lerini analiz eder, ilan kriterleri ile eslestirir, uyum skoru u
 
 ## Teknoloji Yaklasimi
 - Mobil/Frontend: Flutter
-- Backend: FastAPI (Python)
+- Backend: Flask (Python)
 - AI/NLP: spaCy, sentence-transformers
 - Veritabani: PostgreSQL
 - Onbellek/Kuyruk: Redis
@@ -74,7 +74,7 @@ Ornek komutlar:
 Ornek komutlar:
 - pip install -r backend/requirements.txt
 - set PYTHONPATH=backend && python backend/scripts/init_db.py
-- flask --app backend/app/main.py run --debug --port 8000
+- set PYTHONPATH=backend && python -m flask --app app.main run --debug --port 8000
 - set PYTHONPATH=backend && pytest backend/tests -q
 
 ## Ilk MileStone (MVP)
@@ -84,4 +84,5 @@ Ornek komutlar:
 - Aday/ilan skorlama sonucunu listeleme
 
 ## Not
-Bu repo ilk kurulum asamasindadir. Sonraki adimda veritabani modelleri, auth ve NLP pipeline katmani eklenecektir.
+Bu repo artik ilk kurulum asamasini gecmistir. Backend MVP, mobil istemci iskeleti, auth, raporlama ve audit log katmanlari mevcuttur.
+Sonraki adimlar daha cok calistirma/entegrasyon duzeltmeleri, ekran tamamlama ve final teslim hazirligidir.
