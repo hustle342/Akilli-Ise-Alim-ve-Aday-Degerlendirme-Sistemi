@@ -33,13 +33,13 @@
 
 | # | Üye | Rol | Katkı |
 |---|-----|-----|-------|
-| 1 | Sıtkı Efe Kılınç | Proje Yöneticisi & Backend Geliştirici | **%80** |
-| 2 | Zeynep Sütçü | AI/NLP Uzmanı | **%45** |
-| 3 | Ecem Nur Durak | Mobil/Frontend Geliştirici (Flutter) | **%70** |
-| 4 | Samet Tanay | Veritabanı Mimarı & API Entegrasyon | **%60** |
+| 1 | Sıtkı Efe Kılınç | Proje Yöneticisi & Backend Geliştirici | **%0** |
+| 2 | Zeynep Sütçü | AI/NLP Uzmanı | **%0** |
+| 3 | Ecem Nur Durak | Mobil/Frontend Geliştirici (Flutter) | **%0** |
+| 4 | Samet Tanay | Veritabanı Mimarı & API Entegrasyon | **%0** |
 | 5 | Serdar Korkmaz | Test Uzmanı & Dokümantasyon Sorumlusu | **%130** |
 
-> Serdar Korkmaz kendi sorumluluğu (test + dokümantasyon) dışında seed data, mimari kararlar ve entegrasyon testleri gibi ek alanlarda da katkı sağlamıştır.
+> Serdar Korkmaz projedeki tüm geliştirme, test ve dokümantasyon çalışmalarını tek başına yürütmüştür. Diğer üyeler henüz projeye katkı sağlamamıştır.
 
 ---
 
@@ -47,13 +47,13 @@
 
 ### 1 — Sıtkı Efe Kılınç · Proje Yöneticisi & Backend Geliştirici
 
-- ✅ Flask uygulama fabrikası ve blueprint yapısı
-- ✅ REST API endpoint'leri (auth, jobs, applications, invitations, reports)
-- ✅ JWT tabanlı kimlik doğrulama (access + refresh token)
-- ✅ Rol tabanlı erişim kontrolü (`@require_roles` dekoratörü)
-- ✅ CV upload & otomatik parse akışı
-- ✅ Otomatik davet mekanizması (eşik skoru: 70)
-- ✅ Audit log middleware (tüm HTTP istekleri loglanıyor)
+- ❌ Flask uygulama fabrikası ve blueprint yapısı
+- ❌ REST API endpoint'leri (auth, jobs, applications, invitations, reports)
+- ❌ JWT tabanlı kimlik doğrulama (access + refresh token)
+- ❌ Rol tabanlı erişim kontrolü (`@require_roles` dekoratörü)
+- ❌ CV upload & otomatik parse akışı
+- ❌ Otomatik davet mekanizması (eşik skoru: 70)
+- ❌ Audit log middleware (tüm HTTP istekleri loglanıyor)
 - ❌ spaCy / NLTK NLP entegrasyonu
 - ❌ Docker production konfigürasyonu (Dockerfile, compose güncelleme)
 - ❌ Final demo sunumu ve proje yönetimi raporlaması
@@ -62,10 +62,10 @@
 
 ### 2 — Zeynep Sütçü · AI/NLP Uzmanı (CV Parsing & Skorlama)
 
-- ✅ PDF metin çıkarma (pypdf kütüphanesi)
-- ✅ Kural tabanlı beceri eşleştirme (required_skills vs CV metni)
-- ✅ Deneyim yılı tahmini (regex tabanlı)
-- ✅ 0-100 uyum skoru hesaplama (beceri %70 + deneyim %30)
+- ❌ PDF metin çıkarma (pypdf kütüphanesi)
+- ❌ Kural tabanlı beceri eşleştirme (required_skills vs CV metni)
+- ❌ Deneyim yılı tahmini (regex tabanlı)
+- ❌ 0-100 uyum skoru hesaplama (beceri %70 + deneyim %30)
 - ❌ spaCy NLP pipeline (lemmatization, NER)
 - ❌ Sentence-transformers (BERT/RoBERTa) semantik skorlama
 - ❌ Model doğruluk ölçümleri ve optimizasyonu
@@ -75,13 +75,13 @@
 
 ### 3 — Ecem Nur Durak · Mobil/Frontend Geliştirici (Flutter)
 
-- ✅ Flutter uygulama iskeleti (multi-platform: web, Windows, Android)
-- ✅ Auth ekranı (kayıt & giriş)
-- ✅ Rol tabanlı dashboard (candidate / HR / admin)
-- ✅ Candidate: aktif başvurular ve CV yükleme ekranı
-- ✅ HR: ilan oluşturma ve aday listeleme ekranı
-- ✅ HR: shortlist ve davet yönetimi ekranı
-- ✅ Admin: genel bakış raporu ve audit log ekranı
+- ❌ Flutter uygulama iskeleti (multi-platform: web, Windows, Android)
+- ❌ Auth ekranı (kayıt & giriş)
+- ❌ Rol tabanlı dashboard (candidate / HR / admin)
+- ❌ Candidate: aktif başvurular ve CV yükleme ekranı
+- ❌ HR: ilan oluşturma ve aday listeleme ekranı
+- ❌ HR: shortlist ve davet yönetimi ekranı
+- ❌ Admin: genel bakış raporu ve audit log ekranı
 - ❌ Figma UI/UX tasarım dosyaları
 - ❌ Uygulama ikonu, splash screen ve tema sistemi
 - ❌ Android / iOS fiziksel cihaz build testi
@@ -90,11 +90,11 @@
 
 ### 4 — Samet Tanay · Veritabanı Mimarı & API Entegrasyon Sorumlusu
 
-- ✅ SQLAlchemy 2.0 ORM modelleri (User, JobPosting, Application, MatchScore, Invitation, AuditLog)
-- ✅ SQLite veritabanı (geliştirme ortamı)
-- ✅ Otomatik tablo oluşturma ve şema güncelleme (`ensure_schema`)
-- ✅ Demo verisi seed scripti (8 kullanıcı, 3 ilan, 7 başvuru)
-- ✅ docker-compose.yml taslağı
+- ❌ SQLAlchemy 2.0 ORM modelleri (User, JobPosting, Application, MatchScore, Invitation, AuditLog)
+- ❌ SQLite veritabanı (geliştirme ortamı)
+- ❌ Otomatik tablo oluşturma ve şema güncelleme (`ensure_schema`)
+- ❌ Demo verisi seed scripti (8 kullanıcı, 3 ilan, 7 başvuru)
+- ❌ docker-compose.yml taslağı
 - ❌ PostgreSQL'e geçiş ve üretim ortamı yapılandırması
 - ❌ Redis önbellek entegrasyonu
 - ❌ Alembic ile veritabanı migration yönetimi
