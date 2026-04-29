@@ -54,9 +54,8 @@
 - ❌ CV upload & otomatik parse akışı
 - ❌ Otomatik davet mekanizması (eşik skoru: 70)
 - ❌ Audit log middleware (tüm HTTP istekleri loglanıyor)
-- ❌ spaCy / NLTK NLP entegrasyonu
-- ❌ Docker production konfigürasyonu (Dockerfile, compose güncelleme)
-- ❌ Final demo sunumu ve proje yönetimi raporlaması
+- ❌ Final rapor belgesi (proje sonu kapsamlı rapor)
+- ❌ Sunum materyalleri (slayt / demo senaryosu)
 
 ---
 
@@ -112,8 +111,7 @@
 - ✅ `docs/uml-diagrams.md` — UML diyagramları (Class, Use Case, 2× Sequence)
 - ✅ `docs/kullanim-kilavuzu.md` — Adım adım kullanım kılavuzu
 - ✅ `docs/postman-collection.json` — Postman API koleksiyonu (tüm endpoint'ler + assertion'lar)
-- ❌ Final rapor belgesi (proje sonu kapsamlı rapor)
-- ❌ Sunum materyalleri (slayt / demo senaryosu)
+- ❌ Docker production konfigürasyonu (`Dockerfile`, `docker-compose.prod.yml`)
 
 ---
 
