@@ -317,6 +317,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _myApplications;
   Map<String, dynamic>? _jobs;
   Map<String, dynamic>? _jobCandidates;
+  Map<String, dynamic>? _shortlisted;
+  Map<String, dynamic>? _invitations;
   final _jobTitleController = TextEditingController();
   final _jobDescriptionController = TextEditingController();
   final _jobSkillsController = TextEditingController();
@@ -361,8 +363,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             (jobItems.isNotEmpty
                 ? (jobItems.first as Map<String, dynamic>)['id'] as int?
                 : null);
+        Map<String, dynamic>? shortlisted;
+        Map<String, dynamic>? invitations;
         if (resolvedJobId != null) {
           jobCandidates = await widget.apiService.fetchJobCandidates(
+            session: widget.session,
+            jobPostingId: resolvedJobId,
+          );
+          shortlisted = await widget.apiService.fetchShortlisted(
+            session: widget.session,
+            jobPostingId: resolvedJobId,
+          );
+          invitations = await widget.apiService.fetchInvitations(
             session: widget.session,
             jobPostingId: resolvedJobId,
           );
@@ -374,6 +386,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _jobs = jobs;
           _overview = overview;
           _jobCandidates = jobCandidates;
+          _shortlisted = shortlisted;
+          _invitations = invitations;
           _auditLogs = auditLogs;
           _selectedJobId = resolvedJobId;
         });
@@ -561,6 +575,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _HrManagementSection(
                     jobs: _jobs,
                     jobCandidates: _jobCandidates,
+                    shortlisted: _shortlisted,
+                    invitations: _invitations,
                     selectedJobId: _selectedJobId,
                     titleController: _jobTitleController,
                     descriptionController: _jobDescriptionController,
@@ -729,6 +745,8 @@ class _HrManagementSection extends StatelessWidget {
   const _HrManagementSection({
     required this.jobs,
     required this.jobCandidates,
+    required this.shortlisted,
+    required this.invitations,
     required this.selectedJobId,
     required this.titleController,
     required this.descriptionController,
@@ -741,6 +759,8 @@ class _HrManagementSection extends StatelessWidget {
 
   final Map<String, dynamic>? jobs;
   final Map<String, dynamic>? jobCandidates;
+  final Map<String, dynamic>? shortlisted;
+  final Map<String, dynamic>? invitations;
   final int? selectedJobId;
   final TextEditingController titleController;
   final TextEditingController descriptionController;
@@ -854,7 +874,113 @@ class _HrManagementSection extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        _ShortlistCard(shortlisted: shortlisted, invitations: invitations),
       ],
+    );
+  }
+}
+
+class _ShortlistCard extends StatelessWidget {
+  const _ShortlistCard({
+    required this.shortlisted,
+    required this.invitations,
+  });
+
+  final Map<String, dynamic>? shortlisted;
+  final Map<String, dynamic>? invitations;
+
+  @override
+  Widget build(BuildContext context) {
+    final shortItems =
+        (shortlisted?['candidates'] as List<dynamic>? ?? const []);
+    final inviteItems =
+        (invitations?['invitations'] as List<dynamic>? ?? const []);
+
+    // Build a lookup: application_id -> invitation info
+    final inviteByAppId = <int, Map<String, dynamic>>{};
+    for (final inv in inviteItems) {
+      final item = inv as Map<String, dynamic>;
+      final appId = item['application_id'] as int?;
+      if (appId != null) inviteByAppId[appId] = item;
+    }
+
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.star_rounded, color: Color(0xFF0E5A8A)),
+                const SizedBox(width: 8),
+                Text(
+                  'Kisa Liste (Baraj ≥ 70)',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (shortItems.isEmpty)
+              const Text('Bu ilan icin kisa listeye giren aday bulunmuyor.')
+            else
+              ...shortItems.map((item) {
+                final row = item as Map<String, dynamic>;
+                final name = row['candidate_name']?.toString() ?? 'Aday';
+                final score = row['score'];
+                final appId = row['application_id'] as int?;
+                final invite = appId != null ? inviteByAppId[appId] : null;
+
+                final inviteLabel = invite != null
+                    ? '${invite['type'] ?? ''} · ${invite['status'] ?? ''}'
+                    : 'Davet yok';
+
+                final inviteColor = () {
+                  final status = invite?['status']?.toString() ?? '';
+                  if (status == 'sent') return Colors.green;
+                  if (status == 'completed') return Colors.blue;
+                  if (status == 'canceled') return Colors.red;
+                  return Colors.grey;
+                }();
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  color: const Color(0xFFF4F8FB),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF0E5A8A),
+                      child: Text(
+                        name.substring(0, 1).toUpperCase(),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                    title: Text(name),
+                    subtitle: Text('Basvuru #${appId ?? '-'}'),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Skor: $score',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          inviteLabel,
+                          style: TextStyle(fontSize: 11, color: inviteColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          ],
+        ),
+      ),
     );
   }
 }

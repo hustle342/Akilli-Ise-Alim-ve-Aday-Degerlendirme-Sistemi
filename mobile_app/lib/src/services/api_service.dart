@@ -130,6 +130,29 @@ class ApiService {
     return _parseProtectedJson(response);
   }
 
+  Future<Map<String, dynamic>> fetchShortlisted({
+    required SessionState session,
+    required int jobPostingId,
+    double threshold = 70,
+  }) async {
+    final url = Uri.parse(
+      '${session.baseUrl}/api/v1/jobs/$jobPostingId/shortlisted?threshold=$threshold',
+    );
+    final response = await http.get(url, headers: _authHeaders(session));
+    return _parseProtectedJson(response);
+  }
+
+  Future<Map<String, dynamic>> fetchInvitations({
+    required SessionState session,
+    required int jobPostingId,
+  }) async {
+    final url = Uri.parse(
+      '${session.baseUrl}/api/v1/invitations?job_posting_id=$jobPostingId',
+    );
+    final response = await http.get(url, headers: _authHeaders(session));
+    return _parseProtectedJson(response);
+  }
+
   Future<Map<String, dynamic>> uploadApplicationCv({
     required SessionState session,
     required int jobPostingId,
