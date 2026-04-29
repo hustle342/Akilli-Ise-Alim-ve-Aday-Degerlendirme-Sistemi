@@ -37,9 +37,9 @@
 | 2 | Zeynep Sütçü | AI/NLP Uzmanı | **%0** |
 | 3 | Ecem Nur Durak | Mobil/Frontend Geliştirici (Flutter) | **%0** |
 | 4 | Samet Tanay | Veritabanı Mimarı & API Entegrasyon | **%0** |
-| 5 | Serdar Korkmaz | Test Uzmanı & Dokümantasyon Sorumlusu | **%130** |
+| 5 | Serdar Korkmaz | Test Uzmanı & Dokümantasyon Sorumlusu | **%140** |
 
-> Serdar Korkmaz projedeki tüm geliştirme, test ve dokümantasyon çalışmalarını tek başına yürütmüştür. Diğer üyeler henüz projeye katkı sağlamamıştır.
+> Serdar Korkmaz kendi sorumluluğu (test + dokümantasyon) dışında seed data, mimari kararlar, entegrasyon testleri ve Docker üretim konfigürasyonu gibi ek alanlarda da katkı sağlamıştır.
 
 ---
 
@@ -111,7 +111,7 @@
 - ✅ `docs/uml-diagrams.md` — UML diyagramları (Class, Use Case, 2× Sequence)
 - ✅ `docs/kullanim-kilavuzu.md` — Adım adım kullanım kılavuzu
 - ✅ `docs/postman-collection.json` — Postman API koleksiyonu (tüm endpoint'ler + assertion'lar)
-- ❌ Docker production konfigürasyonu (`Dockerfile`, `docker-compose.prod.yml`)
+- ✅ Docker production konfigürasyonu (`backend/Dockerfile.prod`, `docker-compose.prod.yml`, `backend/.env.prod.example`)
 
 ---
 

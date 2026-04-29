@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 recruitment.db
 backend/storage/
+backend/.env.prod
 mobile_app/.dart_tool/
 mobile_app/.idea/
 mobile_app/.metadata

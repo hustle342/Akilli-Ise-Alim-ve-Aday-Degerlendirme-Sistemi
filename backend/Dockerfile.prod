@@ -1,0 +1,63 @@
+# ── Aşama 1: Bağımlılıklar ──────────────────────────────────────────────────
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+
+# Sistem bağımlılıkları (psycopg binary için)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+# ── Aşama 2: Üretim İmajı ────────────────────────────────────────────────────
+FROM python:3.12-slim AS runtime
+
+# Güvenlik: root olmayan kullanıcı
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
+
+WORKDIR /app
+
+# Sistem runtime kütüphaneleri
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libpq5 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Builder aşamasından yalnızca kurulu paketleri kopyala
+COPY --from=builder /install /usr/local
+
+# Uygulama kaynak kodunu kopyala
+COPY app /app/app
+
+# CV depolama dizini
+RUN mkdir -p /app/storage/cvs && chown -R appuser:appgroup /app
+
+USER appuser
+
+# Ortam değişkenleri (docker-compose.prod.yml veya --env-file ile ezilir)
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    FLASK_APP=app.main:app \
+    FLASK_ENV=production \
+    WORKERS=4 \
+    THREADS=2 \
+    TIMEOUT=120
+
+EXPOSE 8000
+
+# Sağlık kontrolü
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')" || exit 1
+
+# Üretimde gunicorn ile çalıştır
+CMD gunicorn \
+        --bind 0.0.0.0:8000 \
+        --workers ${WORKERS} \
+        --threads ${THREADS} \
+        --timeout ${TIMEOUT} \
+        --access-logfile - \
+        --error-logfile - \
+        --log-level info \
+        "app.main:app"

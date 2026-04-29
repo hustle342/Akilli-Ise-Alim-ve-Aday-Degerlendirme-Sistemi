@@ -1,0 +1,108 @@
+# docker-compose.prod.yml — Üretim Ortamı
+# Kullanım:
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# Başlatmadan önce backend/.env.prod dosyası oluşturun (bkz. backend/.env.example)
+
+version: "3.9"
+
+# ── Ağ ───────────────────────────────────────────────────────────────────────
+networks:
+  backend_net:
+    driver: bridge
+
+# ── Kalıcı Hacimler ──────────────────────────────────────────────────────────
+volumes:
+  pgdata_prod:
+  cv_storage:
+
+# ── Servisler ────────────────────────────────────────────────────────────────
+services:
+
+  # --- Flask API (gunicorn) --------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+    image: ise-alim-api:prod
+    container_name: ise-alim-api-prod
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.prod          # SECRET_KEY, DATABASE_URL, vb.
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@db:5432/recruitment
+      CV_STORAGE_DIR: /app/storage/cvs
+      WORKERS: "4"
+      THREADS: "2"
+    ports:
+      - "8000:8000"
+    volumes:
+      - cv_storage:/app/storage/cvs  # CV dosyaları kalıcı hacimde
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  # --- PostgreSQL -------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: ise-alim-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: recruitment
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+    volumes:
+      - pgdata_prod:/var/lib/postgresql/data
+    networks:
+      - backend_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d recruitment"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    # Üretimde port dışarıya açılmaz; yalnızca iç ağdan erişilir
+    expose:
+      - "5432"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+
+  # --- Redis (isteğe bağlı önbellek) -----------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ise-alim-redis-prod
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - /tmp/redis-data:/data   # geliştirme için; üretimde named volume tercih edin
+    networks:
+      - backend_net
+    expose:
+      - "6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
