@@ -1,0 +1,456 @@
+{
+  "info": {
+    "name": "Akilli Ise Alim ve Aday Degerlendirme Sistemi",
+    "description": "Hazırlayan: Serdar Korkmaz (Test Uzmanı & Dokümantasyon Sorumlusu)\nBackend: Flask 3.1, Python 3.14\nBase URL: http://127.0.0.1:8000",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",       "value": "http://127.0.0.1:8000" },
+    { "key": "access_token",   "value": "" },
+    { "key": "refresh_token",  "value": "" },
+    { "key": "candidate_id",   "value": "" },
+    { "key": "job_id",         "value": "" },
+    { "key": "application_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Aday Kaydı (POST /candidates)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/candidates", "host": ["{{base_url}}"], "path": ["api", "v1", "candidates"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Ali Veli\",\n  \"email\": \"ali@example.com\",\n  \"password\": \"Test1234!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('candidate_id', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "HR/Admin Kaydı (POST /auth/register)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/register", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"IK Kullanici\",\n  \"email\": \"ik@example.com\",\n  \"password\": \"HrPass123!\",\n  \"role\": \"hr\",\n  \"bootstrap_code\": \"dev-bootstrap-code\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Giriş — Token Al (POST /auth/token)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/token", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "token"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ali@demo.com\",\n  \"password\": \"Candidate123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('access_token', json.access_token);",
+                  "pm.collectionVariables.set('refresh_token', json.refresh_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token Yenile (POST /auth/refresh)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/refresh", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "refresh"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('access_token', json.access_token);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Jobs (İlanlar)",
+      "item": [
+        {
+          "name": "İlan Oluştur (POST /jobs) — HR",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/api/v1/jobs", "host": ["{{base_url}}"], "path": ["api", "v1", "jobs"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Python Backend Developer\",\n  \"description\": \"Flask, REST API, SQL gelistirme\",\n  \"min_years_experience\": 2,\n  \"required_skills\": [\"python\", \"flask\", \"sql\"]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.collectionVariables.set('job_id', json.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "İlan Listesi (GET /jobs)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/jobs", "host": ["{{base_url}}"], "path": ["api", "v1", "jobs"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('jobs field exists', () => pm.expect(pm.response.json()).to.have.property('jobs'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Applications (Başvurular)",
+      "item": [
+        {
+          "name": "CV Yükle (POST /applications/upload) — Candidate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/applications/upload", "host": ["{{base_url}}"], "path": ["api", "v1", "applications", "upload"] },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "candidate_id", "value": "{{candidate_id}}", "type": "text" },
+                { "key": "job_posting_id", "value": "{{job_id}}", "type": "text" },
+                { "key": "cv_file", "type": "file", "src": "" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('match_score 0-100', () => { pm.expect(json.match_score).to.be.at.least(0); pm.expect(json.match_score).to.be.at.most(100); });",
+                  "pm.collectionVariables.set('application_id', json.application_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kendi Başvurularım (GET /applications/me) — Candidate",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/applications/me", "host": ["{{base_url}}"], "path": ["api", "v1", "applications", "me"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('applications field', () => pm.expect(pm.response.json()).to.have.property('applications'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "HR — Aday & Shortlist",
+      "item": [
+        {
+          "name": "İlan Bazlı Aday Listesi (GET /jobs/{id}/candidates)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/jobs/{{job_id}}/candidates",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "jobs", "{{job_id}}", "candidates"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('candidates sorted', () => {",
+                  "  const scores = pm.response.json().candidates.map(c => c.match_score);",
+                  "  const sorted = [...scores].sort((a,b) => b-a);",
+                  "  pm.expect(scores).to.eql(sorted);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kısaltılmış Liste — threshold=70 (GET /jobs/{id}/shortlisted)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/jobs/{{job_id}}/shortlisted?threshold=70",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "jobs", "{{job_id}}", "shortlisted"],
+              "query": [{ "key": "threshold", "value": "70" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('All scores >= 70', () => {",
+                  "  pm.response.json().candidates.forEach(c => pm.expect(c.score).to.be.at.least(70));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Davetler (GET /invitations)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/invitations?job_posting_id={{job_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "invitations"],
+              "query": [{ "key": "job_posting_id", "value": "{{job_id}}" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('invitations field', () => pm.expect(pm.response.json()).to.have.property('invitations'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reports (Raporlar)",
+      "item": [
+        {
+          "name": "Genel Özet (GET /reports/overview)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/reports/overview", "host": ["{{base_url}}"], "path": ["api", "v1", "reports", "overview"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "['total_jobs','total_applications','total_candidates'].forEach(k => pm.test('has ' + k, () => pm.expect(body).to.have.property(k)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "İlan Özet Raporu (GET /reports/jobs/{id}/summary)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reports/jobs/{{job_id}}/summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reports", "jobs", "{{job_id}}", "summary"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "['job_posting_id','applications_count','avg_score'].forEach(k => pm.test('has ' + k, () => pm.expect(body).to.have.property(k)));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin — Audit Logs",
+      "item": [
+        {
+          "name": "Audit Log Listesi (GET /audit-logs) — Admin",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit-logs?limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audit-logs"],
+              "query": [{ "key": "limit", "value": "20" }]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('logs field', () => pm.expect(pm.response.json()).to.have.property('logs'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Audit Log — Path Filtresi",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": {
+              "raw": "{{base_url}}/api/v1/audit-logs?path=/api/v1/jobs&method=GET",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "audit-logs"],
+              "query": [
+                { "key": "path", "value": "/api/v1/jobs" },
+                { "key": "method", "value": "GET" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Negatif / Yetki Testleri",
+      "item": [
+        {
+          "name": "Token Olmadan İlan Oluşturma → 401",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/jobs", "host": ["{{base_url}}"], "path": ["api", "v1", "jobs"] },
+            "body": { "mode": "raw", "raw": "{ \"title\": \"test\", \"description\": \"test\", \"min_years_experience\": 0, \"required_skills\": [] }" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"] }
+            }
+          ]
+        },
+        {
+          "name": "Yanlış Şifre ile Giriş → 401",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/api/v1/auth/token", "host": ["{{base_url}}"], "path": ["api", "v1", "auth", "token"] },
+            "body": { "mode": "raw", "raw": "{ \"email\": \"ali@demo.com\", \"password\": \"YanlisPassword!\" }" }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"] }
+            }
+          ]
+        },
+        {
+          "name": "Candidate Audit Log → 403",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": { "raw": "{{base_url}}/api/v1/audit-logs", "host": ["{{base_url}}"], "path": ["api", "v1", "audit-logs"] }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('403 Forbidden', () => pm.response.to.have.status(403));"] }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
