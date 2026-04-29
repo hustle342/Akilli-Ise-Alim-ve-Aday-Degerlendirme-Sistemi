@@ -1,5 +1,122 @@
 # Akilli Ise Alim ve Aday Degerlendirme Sistemi
 
+---
+
+## 📊 Proje Tamamlanma Durumu
+
+> **Genel İlerleme: %75**
+
+```
+██████████████████████░░░░░░  75%
+```
+
+| Alan | Durum | % |
+|------|-------|---|
+| Backend API (tüm endpoint'ler) | ✅ Tamamlandı | %100 |
+| Kimlik Doğrulama & Yetkilendirme (JWT, RBAC) | ✅ Tamamlandı | %100 |
+| CV Parsing (pypdf, kural tabanlı) | ✅ Tamamlandı | %100 |
+| Uyum Skoru (kural tabanlı) | ✅ Tamamlandı | %100 |
+| Flutter Mobil Uygulama | ✅ Büyük ölçüde tamamlandı | %70 |
+| Veritabanı Modelleri (SQLite/SQLAlchemy) | ✅ Tamamlandı | %100 |
+| Test Altyapısı (40 test) | ✅ Tamamlandı | %100 |
+| Dokümantasyon | ✅ Tamamlandı | %100 |
+| AI/NLP (spaCy, BERT/sentence-transformers) | ❌ Yapılmadı | %0 |
+| PostgreSQL Geçişi | ❌ Yapılmadı | %0 |
+| Redis Önbellekleme | ❌ Yapılmadı | %0 |
+| Docker Production Ayarları | ❌ Yapılmadı | %0 |
+| Figma UI/UX Tasarımları | ❌ Yapılmadı | %0 |
+| Final Rapor & Sunum Materyalleri | ❌ Yapılmadı | %0 |
+
+---
+
+## 👥 Üye Katkı Oranları
+
+| # | Üye | Rol | Katkı |
+|---|-----|-----|-------|
+| 1 | Sıtkı Efe Kılınç | Proje Yöneticisi & Backend Geliştirici | **%80** |
+| 2 | Zeynep Sütçü | AI/NLP Uzmanı | **%45** |
+| 3 | Ecem Nur Durak | Mobil/Frontend Geliştirici (Flutter) | **%70** |
+| 4 | Samet Tanay | Veritabanı Mimarı & API Entegrasyon | **%60** |
+| 5 | Serdar Korkmaz | Test Uzmanı & Dokümantasyon Sorumlusu | **%130** |
+
+> Serdar Korkmaz kendi sorumluluğu (test + dokümantasyon) dışında seed data, mimari kararlar ve entegrasyon testleri gibi ek alanlarda da katkı sağlamıştır.
+
+---
+
+## ✅❌ Üye Görev Listeleri
+
+### 1 — Sıtkı Efe Kılınç · Proje Yöneticisi & Backend Geliştirici
+
+- ✅ Flask uygulama fabrikası ve blueprint yapısı
+- ✅ REST API endpoint'leri (auth, jobs, applications, invitations, reports)
+- ✅ JWT tabanlı kimlik doğrulama (access + refresh token)
+- ✅ Rol tabanlı erişim kontrolü (`@require_roles` dekoratörü)
+- ✅ CV upload & otomatik parse akışı
+- ✅ Otomatik davet mekanizması (eşik skoru: 70)
+- ✅ Audit log middleware (tüm HTTP istekleri loglanıyor)
+- ❌ spaCy / NLTK NLP entegrasyonu
+- ❌ Docker production konfigürasyonu (Dockerfile, compose güncelleme)
+- ❌ Final demo sunumu ve proje yönetimi raporlaması
+
+---
+
+### 2 — Zeynep Sütçü · AI/NLP Uzmanı (CV Parsing & Skorlama)
+
+- ✅ PDF metin çıkarma (pypdf kütüphanesi)
+- ✅ Kural tabanlı beceri eşleştirme (required_skills vs CV metni)
+- ✅ Deneyim yılı tahmini (regex tabanlı)
+- ✅ 0-100 uyum skoru hesaplama (beceri %70 + deneyim %30)
+- ❌ spaCy NLP pipeline (lemmatization, NER)
+- ❌ Sentence-transformers (BERT/RoBERTa) semantik skorlama
+- ❌ Model doğruluk ölçümleri ve optimizasyonu
+- ❌ Çok dilli CV desteği
+
+---
+
+### 3 — Ecem Nur Durak · Mobil/Frontend Geliştirici (Flutter)
+
+- ✅ Flutter uygulama iskeleti (multi-platform: web, Windows, Android)
+- ✅ Auth ekranı (kayıt & giriş)
+- ✅ Rol tabanlı dashboard (candidate / HR / admin)
+- ✅ Candidate: aktif başvurular ve CV yükleme ekranı
+- ✅ HR: ilan oluşturma ve aday listeleme ekranı
+- ✅ HR: shortlist ve davet yönetimi ekranı
+- ✅ Admin: genel bakış raporu ve audit log ekranı
+- ❌ Figma UI/UX tasarım dosyaları
+- ❌ Uygulama ikonu, splash screen ve tema sistemi
+- ❌ Android / iOS fiziksel cihaz build testi
+
+---
+
+### 4 — Samet Tanay · Veritabanı Mimarı & API Entegrasyon Sorumlusu
+
+- ✅ SQLAlchemy 2.0 ORM modelleri (User, JobPosting, Application, MatchScore, Invitation, AuditLog)
+- ✅ SQLite veritabanı (geliştirme ortamı)
+- ✅ Otomatik tablo oluşturma ve şema güncelleme (`ensure_schema`)
+- ✅ Demo verisi seed scripti (8 kullanıcı, 3 ilan, 7 başvuru)
+- ✅ docker-compose.yml taslağı
+- ❌ PostgreSQL'e geçiş ve üretim ortamı yapılandırması
+- ❌ Redis önbellek entegrasyonu
+- ❌ Alembic ile veritabanı migration yönetimi
+
+---
+
+### 5 — Serdar Korkmaz · Test Uzmanı & Dokümantasyon Sorumlusu
+
+- ✅ Birim testleri — 17 test (`test_health`, `test_models`, `test_match`, `test_auth_rbac`, vb.)
+- ✅ Kabul testleri — 23 test, 6 fazda (`test_acceptance.py`)
+- ✅ `docs/requirements.md` — Gereksinim dokümanı
+- ✅ `docs/architecture.md` — Mimari doküman
+- ✅ `docs/data-model.md` — Veri modeli dokümanı
+- ✅ `docs/roadmap.md` — Yol haritası
+- ✅ `docs/uml-diagrams.md` — UML diyagramları (Class, Use Case, 2× Sequence)
+- ✅ `docs/kullanim-kilavuzu.md` — Adım adım kullanım kılavuzu
+- ✅ `docs/postman-collection.json` — Postman API koleksiyonu (tüm endpoint'ler + assertion'lar)
+- ❌ Final rapor belgesi (proje sonu kapsamlı rapor)
+- ❌ Sunum materyalleri (slayt / demo senaryosu)
+
+---
+
 Bu repo, Yazilim Tasarim ve Mimarisi icin planlanan yapay zeka destekli ise alim platformunun gelistirme calismasini icerir.
 
 ## Proje Ozeti
