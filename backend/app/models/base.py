@@ -1,5 +1,2 @@
-from sqlalchemy.orm import DeclarativeBase
-
-
-class Base(DeclarativeBase):
-    pass
+"""Geriye donuk uyumluluk — Base artik core.entities.base_entity'de."""
+from app.core.entities.base_entity import Base  # noqa: F401

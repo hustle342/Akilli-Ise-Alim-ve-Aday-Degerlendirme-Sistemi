@@ -1,36 +1,50 @@
-# Mimari Taslak
+# Mimari Doküman — Onion Architecture
 
-## Mimari Stil
-- Backend: Katmanli ve modul bazli yapi
-- API: REST
-- Veri: PostgreSQL + Redis
+## Katman Yapısı
 
-## Bilesenler
-1. API Katmani
-- Aday, ilan, eslestirme, admin endpointleri
+```
+┌─────────────────────────────────────────────────┐
+│              PRESENTATION                       │
+│  (API Routes, Middleware, WebSocket)             │
+├─────────────────────────────────────────────────┤
+│              APPLICATION                        │
+│  (CQRS Commands/Queries, Facade, DTOs)          │
+├─────────────────────────────────────────────────┤
+│              INFRASTRUCTURE                     │
+│  (DB, Adapters, Scoring, ESB, Notifications)    │
+├─────────────────────────────────────────────────┤
+│              CORE (DOMAIN)                      │
+│  (Entities, Enums, Interfaces, Events, VOs)     │
+└─────────────────────────────────────────────────┘
+```
 
-2. Servis Katmani
-- CV parsing servisi
-- Skorlama servisi
-- Mulakat/test tetikleme servisi
+## Uygulanan Tasarım Kalıpları
 
-3. Veri Katmani
-- Adaylar
-- Ilanlar
-- Basvurular
-- Skor kayitlari
-- Mulakat/test planlari
-- Loglar
+### Creational (Yaratımsal)
+- **Singleton**: `ConfigurationManager`, `DatabaseManager`, `InMemoryEventBus`
+- **Factory Method**: `ScoringFactory` — farklı skorlama stratejileri üretir
 
-## Akis
-1. Aday CV yukler
-2. Parser oz nitelikleri cikarir
-3. IK ilan olusturur
-4. Skorlama modulu adaylari puanlar
-5. IK panelinde sirali liste gorulur
-6. Baraj ustu adaylara otomatik davet gider
+### Structural (Yapısal)
+- **Facade**: `RecruitmentFacade` — tüm alt servisleri tek arayüzden sunar
+- **Adapter**: `CVParserAdapter` — PyPDF'i ICVParser'a adapt eder
 
-## Tasarim Prensipleri
-- Servisler arasi bagimliliklar gevsek tutulur
-- NLP/skorlama adaptor yapisi ile degistirilebilir kurgulanir
-- Dogrulama ve hata yonetimi API sinirinda merkezi yapilir
+### Behavioural (Davranışsal)
+- **Strategy**: `IScoringStrategy` → `RuleBasedScoringStrategy`, `SemanticScoringStrategy`
+- **Observer**: Event Handler'lar ESB üzerinden domain event'leri dinler
+
+## OOP Prensipleri
+- **Encapsulation**: DTO'lar, private alanlar
+- **Inheritance**: `BaseEntity` → tüm entity'ler
+- **Polymorphism**: Interface tabanlı repository/strategy değişimi
+- **Abstraction**: `IRepository`, `IScoringStrategy`, `ICVParser`, `IEventBus`
+
+## CQRS
+- Commands: `RegisterUserCommand`, `CreateJobCommand`, `UploadCVCommand`
+- Queries: `GetJobsQuery`, `GetMyApplicationsQuery`, `GetJobCandidatesQuery`, `GetReportQuery`
+
+## ESB
+- `InMemoryEventBus` — Redis Pub/Sub için hazır arayüz
+- Olaylar: `application.created`, `score.calculated`, `invitation.sent`, `user.registered`, `job.created`
+
+## Real-Time
+- WebSocket desteği `flask-socketio` ile (opsiyonel bağımlılık)

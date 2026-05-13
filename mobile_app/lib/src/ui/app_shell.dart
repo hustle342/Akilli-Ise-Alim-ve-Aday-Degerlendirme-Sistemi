@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../models/session_state.dart';
 import '../services/api_service.dart';
+import 'theme.dart';
 
 class RecruitmentApp extends StatefulWidget {
   const RecruitmentApp({super.key});
@@ -29,29 +30,13 @@ class _RecruitmentAppState extends State<RecruitmentApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Akilli Ise Alim',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF0E5A8A),
-          brightness: Brightness.light,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF4F1E8),
-        useMaterial3: true,
-        cardTheme: const CardThemeData(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          color: Colors.white,
-        ),
-      ),
-      home: _session == null
-          ? AuthScreen(apiService: _apiService, onLogin: _handleLogin)
-          : DashboardScreen(
-              apiService: _apiService,
-              session: _session!,
-              onLogout: _handleLogout,
-            ),
+    if (_session == null) {
+      return AuthScreen(apiService: _apiService, onLogin: _handleLogin);
+    }
+    return DashboardScreen(
+      apiService: _apiService,
+      session: _session!,
+      onLogout: _handleLogout,
     );
   }
 }
@@ -145,17 +130,13 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     final titleStyle = Theme.of(context).textTheme.headlineMedium?.copyWith(
       fontWeight: FontWeight.w700,
-      color: const Color(0xFF102A43),
+      color: AppTheme.textPrimary,
     );
 
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE6EEF3), Color(0xFFF6E6C5)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: AppTheme.authGradient,
         ),
         child: Center(
           child: ConstrainedBox(
@@ -230,8 +211,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           _message!,
                           style: TextStyle(
                             color: _message!.toLowerCase().contains('basarili')
-                                ? const Color(0xFF166534)
-                                : const Color(0xFF991B1B),
+                                ? AppTheme.success
+                                : AppTheme.error,
                           ),
                         ),
                       ],
@@ -914,7 +895,7 @@ class _ShortlistCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.star_rounded, color: Color(0xFF0E5A8A)),
+                const Icon(Icons.star_rounded, color: AppTheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Kisa Liste (Baraj ≥ 70)',
@@ -953,7 +934,7 @@ class _ShortlistCard extends StatelessWidget {
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: const Color(0xFF0E5A8A),
+                      backgroundColor: AppTheme.primary,
                       child: Text(
                         name.substring(0, 1).toUpperCase(),
                         style: const TextStyle(color: Colors.white),
