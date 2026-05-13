@@ -1,6 +1,44 @@
 # Akilli Ise Alim ve Aday Degerlendirme Sistemi
 
+## 🚀 Projeyi Nasıl Çalıştırırsınız? (Hızlı Başlangıç)
+
+Uygulamayı çalıştırmak için **Backend (Sunucu)** ve **Frontend (Arayüz)** olmak üzere iki komut satırı penceresine (terminale) ihtiyacınız vardır.
+
+### 1. Backend'i Başlatmak İçin:
+Yeni bir terminal açın, proje klasörünün en dışında olduğunuzdan emin olun ve şu komutları girin:
+
+```powershell
+# Gerekli Python kütüphanelerini yükleyin
+py -m pip install -r backend/requirements.txt
+
+# Sunucuyu başlatın
+$env:PYTHONPATH="backend"; py -m flask --app app.main run --debug --port 8000
+```
+*(Backend başarılı bir şekilde çalıştırıldığında `http://127.0.0.1:8000` adresinde aktif olacaktır.)*
+
+### 2. Frontend'i (Flutter Uygulamasını) Başlatmak İçin:
+Ayrı bir (ikinci) terminal açın ve şu komutları girin:
+
+```powershell
+# Mobil uygulama klasörüne geçin
+cd mobile_app
+
+# Gerekli arayüz eklentilerini indirin
+flutter pub get
+
+# Chrome üzerinde uygulamayı çalıştırın
+flutter run -d chrome
+```
+
+Tarayıcıda uygulama açıldığında giriş panelindeki **Backend URL** kısmına dokunmadan (orada `http://127.0.0.1:8000` yazmalıdır) giriş yapabilirsiniz.
+
+> **Test Hesapları:** 
+> Yönetici: `admin@demo.com` / `AdminPass123!`
+> İK Uzmanı: `ayse.hr@demo.com` / `HrPass123!`
+> Aday: `ali@demo.com` / `Candidate123!`
+
 ---
+
 
 ## Proje Tamamlanma Durumu
 
