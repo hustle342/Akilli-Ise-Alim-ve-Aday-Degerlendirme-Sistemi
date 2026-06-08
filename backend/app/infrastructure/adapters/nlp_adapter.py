@@ -229,29 +229,83 @@ class NLPParserAdapter(ICVParser):
             pass
         return file_bytes.decode("utf-8", errors="ignore")
 
+    # Egitim baglami anahtar kelimeleri — deneyim hesabindan haric tutulacak
+    EDUCATION_CONTEXT_KEYWORDS = {
+        "egitim", "eğitim", "universite", "üniversite", "fakulte", "fakülte",
+        "lisans", "on lisans", "ön lisans", "yuksek lisans", "yüksek lisans",
+        "master", "doktora", "phd", "okul", "ogrenci", "öğrenci", "student",
+        "mezun", "graduation", "university", "college", "school", "faculty",
+        "bachelor", "degree", "diploma", "akademik", "academic", "bölüm",
+        "bolum", "department", "muhendislik", "mühendislik", "engineering",
+    }
+
     def _estimate_years_experience(self, text: str) -> int:
-        """Deneyim yili tahmini — cok dilli regex."""
+        """
+        Deneyim yili tahmini — cok dilli regex.
+
+        Egitim tarihlerini ve egitimle ilgili 'X yil' ifadelerini
+        filtreler, sadece is deneyimini hesaba katar.
+        """
         lower = text.lower()
-        # Turkce ve Ingilizce patternler
-        patterns = [
+
+        # ── 1. Acik deneyim ifadeleri (en guvenilir) ──
+        # "3 yil deneyim", "5 years experience" gibi dogrudan ifadeler
+        explicit_patterns = [
+            r"(\d{1,2})\+?\s*(?:yil|yıl|year|years|yr)\s*(?:deneyim|experience|tecrube|tecrübe)",
+            r"(?:deneyim|experience|tecrube|tecrübe)\s*[:.]?\s*(\d{1,2})\s*(?:yil|yıl|year|years|yr)?",
+        ]
+        explicit_matches = []
+        for pattern in explicit_patterns:
+            explicit_matches.extend(re.findall(pattern, lower))
+
+        if explicit_matches:
+            return max(int(m) for m in explicit_matches)
+
+        # ── 2. Genel "X yil/year" ifadeleri (egitim filtreli) ──
+        general_patterns = [
             r"(\d{1,2})\+?\s*(?:yil|yıl|year|years|yr)",
             r"(\d{1,2})\+?\s*(?:yillik|yıllık|year's)",
-            r"(?:deneyim|experience)\s*[:.]?\s*(\d{1,2})",
         ]
-        all_matches = []
-        for pattern in patterns:
-            all_matches.extend(re.findall(pattern, lower))
+        filtered_matches = []
+        for pattern in general_patterns:
+            for match in re.finditer(pattern, lower):
+                # Eslesmenin etrafindaki 60 karakterlik baglamı kontrol et
+                start = max(0, match.start() - 60)
+                end = min(len(lower), match.end() + 60)
+                context = lower[start:end]
 
-        if not all_matches:
-            # Tarih araligi tabanlı tahmin (2018-2023 → 5 yil)
-            year_ranges = re.findall(r"(20\d{2})\s*[-–]\s*(20\d{2}|present|gunumuz|halen)", lower)
-            total = 0
-            for start, end in year_ranges:
-                end_year = 2026 if end in ("present", "gunumuz", "halen") else int(end)
-                total += max(0, end_year - int(start))
-            return total
+                # Egitim baglaminda mi kontrol et
+                is_education_context = any(
+                    kw in context for kw in self.EDUCATION_CONTEXT_KEYWORDS
+                )
+                if not is_education_context:
+                    filtered_matches.append(int(match.group(1)))
 
-        return max(int(m) for m in all_matches)
+        if filtered_matches:
+            return max(filtered_matches)
+
+        # ── 3. Tarih araligi tahmini (egitim filtrelemeli) ──
+        # "2018-2023" gibi araliklari bul, egitim bolumleri haric tut
+        year_range_pattern = r"(20\d{2})\s*[-–]\s*(20\d{2}|present|gunumuz|günümüz|halen|devam)"
+        total = 0
+        for match in re.finditer(year_range_pattern, lower):
+            start_pos = max(0, match.start() - 80)
+            end_pos = min(len(lower), match.end() + 80)
+            context = lower[start_pos:end_pos]
+
+            # Egitim baglamindaki tarih araligini atla
+            is_education_context = any(
+                kw in context for kw in self.EDUCATION_CONTEXT_KEYWORDS
+            )
+            if is_education_context:
+                continue
+
+            start_year = int(match.group(1))
+            end_raw = match.group(2)
+            end_year = 2026 if end_raw in ("present", "gunumuz", "günümüz", "halen", "devam") else int(end_raw)
+            total += max(0, end_year - start_year)
+
+        return total
 
     def _detect_education(self, text: str) -> str:
         """Egitim seviyesi tespiti — cok dilli."""

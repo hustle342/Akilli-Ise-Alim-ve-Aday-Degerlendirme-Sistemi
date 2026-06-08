@@ -38,13 +38,16 @@ class RuleBasedScoringStrategy(IScoringStrategy):
         if required:
             overlap = required.intersection(candidate_skills)
             skill_ratio = len(overlap) / len(required)
-            score += skill_ratio * self.SKILL_WEIGHT
+            skill_score = skill_ratio * self.SKILL_WEIGHT
             reasons.append(f"Skill eslesme orani: {skill_ratio:.2f}")
         else:
-            score += 35
+            skill_score = 35
             reasons.append("Ilanda zorunlu yetenek tanimi yok, varsayilan puan verildi")
 
+        score += skill_score
+
         # Experience contributes up to 30 points.
+        # Deneyim yetersizse ek ceza uygulanir.
         min_exp = job.min_years_experience
         candidate_exp = candidate.years_experience
         if min_exp == 0:
@@ -52,8 +55,20 @@ class RuleBasedScoringStrategy(IScoringStrategy):
             reasons.append("Minimum deneyim sarti yok")
         else:
             exp_ratio = min(candidate_exp / min_exp, 1.0)
-            score += exp_ratio * self.EXPERIENCE_WEIGHT
+            exp_score = exp_ratio * self.EXPERIENCE_WEIGHT
+            score += exp_score
             reasons.append(f"Deneyim uygunluk orani: {exp_ratio:.2f}")
+
+            # Deneyim yetersizlik cezasi: deneyim minimumun %50'sinden azsa
+            # skill puanindan da dusme uygulanir
+            if candidate_exp < min_exp:
+                deficiency = 1.0 - (candidate_exp / min_exp)  # 0.0 - 1.0
+                penalty = deficiency * 0.5 * skill_score  # en fazla skill puaninin %50'si
+                score -= penalty
+                reasons.append(
+                    f"Deneyim yetersizlik cezasi: -{penalty:.1f} puan "
+                    f"(istenen: {min_exp} yil, aday: {candidate_exp} yil)"
+                )
 
         return round(score, 2), reasons
 

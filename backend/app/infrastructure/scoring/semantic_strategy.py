@@ -84,10 +84,12 @@ class SemanticScoringStrategy(IScoringStrategy):
         if required:
             overlap = required.intersection(candidate_skills)
             skill_ratio = len(overlap) / len(required)
-            score += skill_ratio * self.SKILL_WEIGHT
+            skill_score = skill_ratio * self.SKILL_WEIGHT
+            score += skill_score
             reasons.append(f"Skill eslesme orani: {skill_ratio:.2f}")
         else:
-            score += 15
+            skill_score = 15
+            score += skill_score
             reasons.append("Ilan zorunlu yetenek tanimi yok")
 
         # ── 3. Deneyim Uyumu (%20) ──
@@ -98,8 +100,19 @@ class SemanticScoringStrategy(IScoringStrategy):
             reasons.append("Minimum deneyim sarti yok")
         else:
             exp_ratio = min(candidate_exp / min_exp, 1.0)
-            score += exp_ratio * self.EXPERIENCE_WEIGHT
+            exp_score = exp_ratio * self.EXPERIENCE_WEIGHT
+            score += exp_score
             reasons.append(f"Deneyim uygunluk orani: {exp_ratio:.2f}")
+
+            # Deneyim yetersizlik cezasi
+            if candidate_exp < min_exp:
+                deficiency = 1.0 - (candidate_exp / min_exp)
+                penalty = deficiency * 0.5 * skill_score
+                score -= penalty
+                reasons.append(
+                    f"Deneyim yetersizlik cezasi: -{penalty:.1f} puan "
+                    f"(istenen: {min_exp} yil, aday: {candidate_exp} yil)"
+                )
 
         return round(score, 2), reasons
 
