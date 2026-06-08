@@ -97,7 +97,7 @@ class UploadCVHandler:
             name=candidate.full_name,
             years_experience=parsed["years_experience"],
             skills=parsed["skills"],
-            education_level="lisans",
+            education_level=parsed.get("education_level", "lisans"),
         )
         job_skills = [s.strip() for s in job.required_skills.split(",") if s.strip()]
         job_requirements = JobRequirements(

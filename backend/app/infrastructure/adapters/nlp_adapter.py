@@ -69,17 +69,100 @@ class NLPParserAdapter(ICVParser):
         "jira", "figma", "firebase", "html", "css",
     }
 
-    # Turkce — Ingilizce yetenek eslestirme (cok dilli destek)
+    # Turkce — Ingilizce yetenek eslestirme + teknoloji synonym'lari
     SKILL_ALIASES = {
+        # Turkce karsiliklari
         "yapay zeka": "machine learning",
         "derin ogrenme": "deep learning",
+        "derin öğrenme": "deep learning",
         "makine ogrenimi": "machine learning",
+        "makine öğrenimi": "machine learning",
         "veri tabani": "sql",
         "veritabani": "sql",
+        "veri tabanı": "sql",
+        "veritabanı": "sql",
         "bulut": "cloud",
         "konteyner": "docker",
         "sunucu": "linux",
         "mobil": "mobile",
+        "yapay sinir agi": "deep learning",
+        "yapay sinir ağı": "deep learning",
+        "dogal dil isleme": "nlp",
+        "doğal dil işleme": "nlp",
+        # JavaScript varyasyonlari
+        "js": "javascript",
+        "es6": "javascript",
+        "ecmascript": "javascript",
+        "ts": "typescript",
+        # Framework varyasyonlari
+        "react.js": "react",
+        "reactjs": "react",
+        "react js": "react",
+        "vue.js": "vue",
+        "vuejs": "vue",
+        "vue js": "vue",
+        "angular.js": "angular",
+        "angularjs": "angular",
+        "next.js": "nextjs",
+        "next js": "nextjs",
+        "nuxt.js": "nuxtjs",
+        "node.js": "nodejs",
+        "node js": "nodejs",
+        "node": "nodejs",
+        "express.js": "express",
+        "expressjs": "express",
+        "ruby on rails": "rails",
+        "asp.net core": "asp.net",
+        "dotnet": "asp.net",
+        ".net": "asp.net",
+        "spring boot": "spring",
+        "springboot": "spring",
+        # Veritabani varyasyonlari
+        "postgres": "postgresql",
+        "postgre": "postgresql",
+        "pg": "postgresql",
+        "mongo": "mongodb",
+        "mssql": "sql",
+        "sql server": "sql",
+        "maria": "mariadb",
+        # DevOps varyasyonlari
+        "k8s": "kubernetes",
+        "kube": "kubernetes",
+        "amazon web services": "aws",
+        "google cloud": "gcp",
+        "google cloud platform": "gcp",
+        "microsoft azure": "azure",
+        "ci cd": "ci/cd",
+        "cicd": "ci/cd",
+        "continuous integration": "ci/cd",
+        "github actions": "ci/cd",
+        "gitlab ci": "ci/cd",
+        # AI/ML varyasyonlari
+        "ml": "machine learning",
+        "dl": "deep learning",
+        "tf": "tensorflow",
+        "sklearn": "scikit-learn",
+        "sk-learn": "scikit-learn",
+        "scikit learn": "scikit-learn",
+        "cv": "computer vision",
+        "goruntu isleme": "computer vision",
+        "görüntü işleme": "computer vision",
+        # Diger varyasyonlar
+        "restful": "rest api",
+        "rest": "rest api",
+        "restful api": "rest api",
+        "graphql api": "graphql",
+        "mikro servis": "microservices",
+        "mikroservis": "microservices",
+        "micro service": "microservices",
+    }
+
+    # Beceri ailesi eslestirmesi — kismi eslestirme icin
+    # Bir aday "postgresql" biliyorsa "sql" de kismen eslesmeli
+    SKILL_FAMILIES = {
+        "sql": {"postgresql", "mysql", "sqlite", "oracle", "mariadb", "sql"},
+        "cloud": {"aws", "azure", "gcp"},
+        "javascript": {"typescript", "javascript"},
     }
 
     # Egitim seviyeleri (TR / EN)

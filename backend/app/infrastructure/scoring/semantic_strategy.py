@@ -31,18 +31,36 @@ class SemanticScoringStrategy(IScoringStrategy):
     Semantik skorlama stratejisi.
 
     Skor bilesenleri:
-    - Semantik benzerlik: %50 (BERT veya TF-IDF cosine)
-    - Beceri eslesmesi: %30
+    - Semantik benzerlik: %40 (BERT veya TF-IDF cosine)
+    - Beceri eslesmesi: %25
     - Deneyim uyumu: %20
+    - Egitim seviyesi: %15
 
     sentence-transformers yuklu degilse TF-IDF cosine similarity
     fallback olarak kullanilir.
     """
 
-    VERSION = "v2-semantic"
-    SEMANTIC_WEIGHT = 50
-    SKILL_WEIGHT = 30
+    VERSION = "v2.1-semantic"
+    SEMANTIC_WEIGHT = 40
+    SKILL_WEIGHT = 25
     EXPERIENCE_WEIGHT = 20
+    EDUCATION_WEIGHT = 15
+
+    # Beceri ailesi eslestirmesi — kismi eslestirme icin
+    SKILL_FAMILIES = {
+        "sql": {"postgresql", "mysql", "sqlite", "oracle", "mariadb", "sql"},
+        "cloud": {"aws", "azure", "gcp"},
+        "javascript": {"typescript", "javascript"},
+    }
+
+    # Egitim seviyesi puanlari (0.0 - 1.0)
+    EDUCATION_SCORES = {
+        "doktora": 1.0,
+        "yuksek_lisans": 0.85,
+        "lisans": 0.65,
+        "on_lisans": 0.45,
+        "lise": 0.25,
+    }
 
     _model = None
     _model_loaded = False
@@ -64,7 +82,7 @@ class SemanticScoringStrategy(IScoringStrategy):
         reasons = []
         score = 0.0
 
-        # ── 1. Semantik Benzerlik (%50) ──
+        # ── 1. Semantik Benzerlik (%40) ──
         candidate_text = self._build_candidate_text(candidate)
         job_text = self._build_job_text(job)
 
@@ -77,18 +95,23 @@ class SemanticScoringStrategy(IScoringStrategy):
 
         score += sim_score * self.SEMANTIC_WEIGHT
 
-        # ── 2. Beceri Eslesmesi (%30) ──
+        # ── 2. Beceri Eslesmesi (%25) ──
         required = {s.strip().lower() for s in job.required_skills}
         candidate_skills = {s.strip().lower() for s in candidate.skills}
 
         if required:
-            overlap = required.intersection(candidate_skills)
-            skill_ratio = len(overlap) / len(required)
+            matched, partial = self._match_skills(required, candidate_skills)
+            total_matched = len(matched) + len(partial) * 0.5
+            skill_ratio = min(total_matched / len(required), 1.0)
             skill_score = skill_ratio * self.SKILL_WEIGHT
             score += skill_score
             reasons.append(f"Skill eslesme orani: {skill_ratio:.2f}")
+            if matched:
+                reasons.append(f"  Tam eslesen: {', '.join(sorted(matched))}")
+            if partial:
+                reasons.append(f"  Kismi eslesen (aile): {', '.join(sorted(partial))}")
         else:
-            skill_score = 15
+            skill_score = self.SKILL_WEIGHT * 0.5
             score += skill_score
             reasons.append("Ilan zorunlu yetenek tanimi yok")
 
@@ -113,6 +136,13 @@ class SemanticScoringStrategy(IScoringStrategy):
                     f"Deneyim yetersizlik cezasi: -{penalty:.1f} puan "
                     f"(istenen: {min_exp} yil, aday: {candidate_exp} yil)"
                 )
+
+        # ── 4. Egitim Seviyesi (%15) ──
+        edu_level = getattr(candidate, "education_level", "lisans") or "lisans"
+        edu_score_ratio = self.EDUCATION_SCORES.get(edu_level, 0.5)
+        edu_score = edu_score_ratio * self.EDUCATION_WEIGHT
+        score += edu_score
+        reasons.append(f"Egitim seviyesi: {edu_level} ({edu_score_ratio:.2f})")
 
         return round(score, 2), reasons
 
@@ -193,3 +223,25 @@ class SemanticScoringStrategy(IScoringStrategy):
             for w in words
             if w.strip(".,;:()[]{}\"'") not in stopwords and len(w) > 1
         ]
+
+    def _match_skills(
+        self, required: Set[str], candidate_skills: Set[str]
+    ) -> Tuple[Set[str], Set[str]]:
+        """
+        Beceri eslestirmesi — tam + aile bazli kismi eslestirme.
+
+        Returns:
+            (tam_eslesen, kismi_eslesen) skill setleri
+        """
+        exact_matches = required.intersection(candidate_skills)
+        remaining = required - exact_matches
+        partial_matches = set()
+
+        for req_skill in remaining:
+            for family_key, family_members in self.SKILL_FAMILIES.items():
+                if req_skill == family_key or req_skill in family_members:
+                    if candidate_skills.intersection(family_members):
+                        partial_matches.add(req_skill)
+                        break
+
+        return exact_matches, partial_matches
