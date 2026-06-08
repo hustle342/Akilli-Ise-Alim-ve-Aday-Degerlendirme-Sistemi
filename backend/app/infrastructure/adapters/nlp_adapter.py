@@ -13,7 +13,7 @@ import logging
 from datetime import datetime, timezone
 from io import BytesIO
 from pathlib import Path
-from typing import List, Set
+from typing import Dict, List, Set
 
 from pypdf import PdfReader
 
@@ -170,15 +170,88 @@ class NLPParserAdapter(ICVParser):
         "doktora": "doktora",
         "phd": "doktora",
         "yuksek lisans": "yuksek_lisans",
+        "yüksek lisans": "yuksek_lisans",
         "master": "yuksek_lisans",
         "msc": "yuksek_lisans",
         "lisans": "lisans",
         "bachelor": "lisans",
         "bsc": "lisans",
         "on lisans": "on_lisans",
+        "ön lisans": "on_lisans",
         "associate": "on_lisans",
         "lise": "lise",
         "high school": "lise",
+    }
+
+    # ── CV Bolum Basliklari (TR / EN) ──
+    SECTION_HEADINGS = {
+        "work": {
+            "is deneyimi", "iş deneyimi", "deneyim", "is tecrubesi", "iş tecrübesi",
+            "work experience", "experience", "professional experience",
+            "employment history", "work history", "kariyer", "career",
+            "calisma gecmisi", "çalışma geçmişi",
+        },
+        "education": {
+            "egitim", "eğitim", "egitim bilgileri", "eğitim bilgileri",
+            "education", "academic background", "akademik gecmis",
+            "akademik geçmiş", "okul bilgileri",
+        },
+        "projects": {
+            "projeler", "projects", "kisisel projeler", "kişisel projeler",
+            "personal projects", "side projects", "open source",
+        },
+        "skills": {
+            "yetenekler", "beceriler", "teknik beceriler", "teknik yetenekler",
+            "skills", "technical skills", "technologies", "teknolojiler",
+        },
+        "certifications": {
+            "sertifikalar", "sertifika", "certifications", "certificates",
+            "belgeler", "lisanslar", "licenses",
+        },
+    }
+
+    # ── Sertifika Sozlugu ──
+    CERTIFICATE_PATTERNS = {
+        # Cloud sertifikalari
+        r"aws\s+(?:certified|solutions?\s+architect|developer|sysops|cloud\s+practitioner)": "AWS Certified",
+        r"aws\s+sertifika": "AWS Certified",
+        r"azure\s+(?:fundamentals|administrator|developer|solutions?\s+architect)": "Azure Certified",
+        r"az-\d{3}": "Azure Certified",
+        r"google\s+cloud\s+(?:certified|professional|associate)": "GCP Certified",
+        r"gcp\s+sertifika": "GCP Certified",
+        # Proje yonetimi
+        r"pmp": "PMP",
+        r"project\s+management\s+professional": "PMP",
+        r"prince2": "PRINCE2",
+        # Agile / Scrum
+        r"scrum\s+master": "Scrum Master",
+        r"csm": "Scrum Master",
+        r"psm\s*[i1]": "Scrum Master",
+        r"product\s+owner": "Product Owner",
+        r"cspo": "Product Owner",
+        # Yazilim kalite
+        r"istqb": "ISTQB",
+        r"ctfl": "ISTQB",
+        # Veri bilimi
+        r"tensorflow\s+(?:developer\s+)?certificate": "TensorFlow Certified",
+        r"databricks": "Databricks Certified",
+        # Guvenlik
+        r"cissp": "CISSP",
+        r"ceh": "CEH",
+        r"comptia\s+security": "CompTIA Security+",
+        r"security\+": "CompTIA Security+",
+        # Aglar
+        r"ccna": "Cisco CCNA",
+        r"ccnp": "Cisco CCNP",
+        # Kubernetes
+        r"cka": "CKA",
+        r"ckad": "CKAD",
+        r"certified\s+kubernetes": "CKA",
+        # Genel
+        r"itil": "ITIL",
+        r"comptia\s+a\+": "CompTIA A+",
+        r"oracle\s+certified": "Oracle Certified",
+        r"java\s+se\s+\d+\s+(?:developer|programmer)": "Oracle Java Certified",
     }
 
     def __init__(self):
@@ -247,11 +320,17 @@ class NLPParserAdapter(ICVParser):
         # ── Beceri cikarimi (lemma + alias) ──
         skills = self._extract_skills(lemmas, text.lower())
 
-        # ── Deneyim yili ──
-        years_experience = self._estimate_years_experience(text)
+        # ── CV Bolum Algilama ──
+        sections = self._detect_sections(text)
+
+        # ── Deneyim yili (bolum bazli) ──
+        years_experience = self._estimate_years_experience(text, sections)
 
         # ── Egitim seviyesi ──
         education_level = self._detect_education(text.lower())
+
+        # ── Sertifika tespiti ──
+        certifications = self._detect_certifications(text.lower())
 
         summary = text[:600]
 
@@ -260,6 +339,8 @@ class NLPParserAdapter(ICVParser):
             "skills": sorted(skills),
             "years_experience": years_experience,
             "education_level": education_level,
+            "certifications": certifications,
+            "sections_found": list(sections.keys()),
             "entities": entities,
             "nlp_engine": "spacy",
         }
@@ -268,14 +349,18 @@ class NLPParserAdapter(ICVParser):
         """Regex tabanlı fallback parse."""
         words = {w.lower().strip(".,;:()[]{}") for w in text.split()}
         skills = self._extract_skills(words, text.lower())
-        years_experience = self._estimate_years_experience(text)
+        sections = self._detect_sections(text)
+        years_experience = self._estimate_years_experience(text, sections)
         education_level = self._detect_education(text.lower())
+        certifications = self._detect_certifications(text.lower())
 
         return {
             "summary": text[:600],
             "skills": sorted(skills),
             "years_experience": years_experience,
             "education_level": education_level,
+            "certifications": certifications,
+            "sections_found": list(sections.keys()),
             "entities": {"persons": [], "organizations": [], "dates": []},
             "nlp_engine": "regex",
         }
@@ -322,17 +407,63 @@ class NLPParserAdapter(ICVParser):
         "bolum", "department", "muhendislik", "mühendislik", "engineering",
     }
 
-    def _estimate_years_experience(self, text: str) -> int:
+    def _detect_sections(self, text: str) -> Dict[str, str]:
         """
-        Deneyim yili tahmini — cok dilli regex.
+        CV metnini bolumlere ayir.
 
-        Egitim tarihlerini ve egitimle ilgili 'X yil' ifadelerini
-        filtreler, sadece is deneyimini hesaba katar.
+        Baslik satirlarini (buyuk harf veya bilinen anahtar kelimeler) tespit
+        ederek metni 'work', 'education', 'projects', 'skills', 'certifications'
+        gibi bolumlere ayirir.
+
+        Returns:
+            Dict[str, str]: bolum_adi -> bolum_metni
+        """
+        lower = text.lower()
+        found_sections: Dict[str, tuple] = {}  # section_type -> (start_pos, heading)
+
+        for section_type, headings in self.SECTION_HEADINGS.items():
+            for heading in headings:
+                # Baslik kelimesini bul (satir basinda veya : / - sonrasinda)
+                patterns = [
+                    rf"(?:^|\n)\s*{re.escape(heading)}\s*[:\-]?",
+                    rf"(?:^|\n)\s*{re.escape(heading.upper())}\s*[:\-]?",
+                ]
+                for pat in patterns:
+                    match = re.search(pat, lower)
+                    if match:
+                        pos = match.start()
+                        # Ayni bolum tipinde daha once bulunan daha once geliyorsa onu koru
+                        if section_type not in found_sections or pos < found_sections[section_type][0]:
+                            found_sections[section_type] = (pos, heading)
+                        break
+
+        if not found_sections:
+            return {}
+
+        # Pozisyona gore sirala ve her bolumun metnini cikar
+        sorted_sections = sorted(found_sections.items(), key=lambda x: x[1][0])
+        result: Dict[str, str] = {}
+
+        for i, (section_type, (start_pos, _heading)) in enumerate(sorted_sections):
+            if i + 1 < len(sorted_sections):
+                end_pos = sorted_sections[i + 1][1][0]
+            else:
+                end_pos = len(text)
+            result[section_type] = text[start_pos:end_pos]
+
+        return result
+
+    def _estimate_years_experience(self, text: str, sections: Dict[str, str] = None) -> int:
+        """
+        Deneyim yili tahmini — bolum bazli + cok dilli regex.
+
+        Eger CV bolumlere ayrildiysa, oncelikle 'work' bolumundeki
+        tarih araliklarini kullanir. Bulunamazsa tam metin uzerinde
+        egitim filtreli arama yapar.
         """
         lower = text.lower()
 
         # ── 1. Acik deneyim ifadeleri (en guvenilir) ──
-        # "3 yil deneyim", "5 years experience" gibi dogrudan ifadeler
         explicit_patterns = [
             r"(\d{1,2})\+?\s*(?:yil|yıl|year|years|yr)\s*(?:deneyim|experience|tecrube|tecrübe)",
             r"(?:deneyim|experience|tecrube|tecrübe)\s*[:.]?\s*(\d{1,2})\s*(?:yil|yıl|year|years|yr)?",
@@ -344,7 +475,14 @@ class NLPParserAdapter(ICVParser):
         if explicit_matches:
             return max(int(m) for m in explicit_matches)
 
-        # ── 2. Genel "X yil/year" ifadeleri (egitim filtreli) ──
+        # ── 2. Bolum bazli tarih araligi (en dogruluklu) ──
+        if sections and "work" in sections:
+            work_text = sections["work"].lower()
+            work_years = self._extract_year_ranges(work_text)
+            if work_years > 0:
+                return work_years
+
+        # ── 3. Genel "X yil/year" ifadeleri (egitim filtreli) ──
         general_patterns = [
             r"(\d{1,2})\+?\s*(?:yil|yıl|year|years|yr)",
             r"(\d{1,2})\+?\s*(?:yillik|yıllık|year's)",
@@ -352,12 +490,10 @@ class NLPParserAdapter(ICVParser):
         filtered_matches = []
         for pattern in general_patterns:
             for match in re.finditer(pattern, lower):
-                # Eslesmenin etrafindaki 60 karakterlik baglamı kontrol et
                 start = max(0, match.start() - 60)
                 end = min(len(lower), match.end() + 60)
                 context = lower[start:end]
 
-                # Egitim baglaminda mi kontrol et
                 is_education_context = any(
                     kw in context for kw in self.EDUCATION_CONTEXT_KEYWORDS
                 )
@@ -367,21 +503,20 @@ class NLPParserAdapter(ICVParser):
         if filtered_matches:
             return max(filtered_matches)
 
-        # ── 3. Tarih araligi tahmini (egitim filtrelemeli) ──
-        # "2018-2023" gibi araliklari bul, egitim bolumleri haric tut
+        # ── 4. Tarih araligi tahmini (egitim filtrelemeli — fallback) ──
+        return self._extract_year_ranges(lower, filter_education=True)
+
+    def _extract_year_ranges(self, text: str, filter_education: bool = False) -> int:
+        """Tarih araliklarindan toplam yil hesapla."""
         year_range_pattern = r"(20\d{2})\s*[-–]\s*(20\d{2}|present|gunumuz|günümüz|halen|devam)"
         total = 0
-        for match in re.finditer(year_range_pattern, lower):
-            start_pos = max(0, match.start() - 80)
-            end_pos = min(len(lower), match.end() + 80)
-            context = lower[start_pos:end_pos]
-
-            # Egitim baglamindaki tarih araligini atla
-            is_education_context = any(
-                kw in context for kw in self.EDUCATION_CONTEXT_KEYWORDS
-            )
-            if is_education_context:
-                continue
+        for match in re.finditer(year_range_pattern, text):
+            if filter_education:
+                start_pos = max(0, match.start() - 80)
+                end_pos = min(len(text), match.end() + 80)
+                context = text[start_pos:end_pos]
+                if any(kw in context for kw in self.EDUCATION_CONTEXT_KEYWORDS):
+                    continue
 
             start_year = int(match.group(1))
             end_raw = match.group(2)
@@ -389,6 +524,20 @@ class NLPParserAdapter(ICVParser):
             total += max(0, end_year - start_year)
 
         return total
+
+    def _detect_certifications(self, text: str) -> List[str]:
+        """
+        CV metninden sertifika tespiti.
+
+        Bilinen sertifika pattern'lerini regex ile arar.
+        Returns:
+            Tespit edilen sertifika isimlerinin listesi
+        """
+        found = set()
+        for pattern, cert_name in self.CERTIFICATE_PATTERNS.items():
+            if re.search(pattern, text, re.IGNORECASE):
+                found.add(cert_name)
+        return sorted(found)
 
     def _detect_education(self, text: str) -> str:
         """Egitim seviyesi tespiti — cok dilli."""
