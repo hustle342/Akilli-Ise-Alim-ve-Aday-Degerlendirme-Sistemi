@@ -4,7 +4,7 @@
 
 Uygulamayı çalıştırmak için **Backend (Sunucu)** ve **Frontend (Arayüz)** olmak üzere iki komut satırı penceresine (terminale) ihtiyacınız vardır.
 
-### 1. Backend'i Başlatmak İçin:
+### 1. Backend'i Başlatmak İçin:s
 Yeni bir terminal açın, proje klasörünün en dışında olduğunuzdan emin olun ve şu komutları girin:
 
 ```powershell
